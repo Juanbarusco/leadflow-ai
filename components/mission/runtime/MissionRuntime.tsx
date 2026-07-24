@@ -86,7 +86,7 @@ export function MissionFocusOverlay({
               onClick={onToggleSettings}
               className="border-white/10 bg-white/5 text-white hover:bg-white/10 hover:text-white"
             >
-              {preferences.soundEnabled ? <Volume2 className="mr-2 h-4 w-4" /> : <VolumeX className="mr-2 h-4 w-4" />}
+              <Settings2 className="mr-2 h-4 w-4" />
               Preferências
             </Button>
             <Button
