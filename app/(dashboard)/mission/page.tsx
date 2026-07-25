@@ -31,13 +31,15 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { useActiveMissionBrief } from "@/hooks/mission/use-active-mission-brief";
 import { useMissionExecution } from "@/hooks/mission/use-mission-execution";
 import { useMissionPreferences } from "@/hooks/mission/use-mission-preferences";
-import { activityMessages, stageDefinitions } from "@/lib/mission/config";
+import { stageDefinitions } from "@/lib/mission/config";
 import { formatCurrency, formatTime } from "@/lib/mission/utils";
 
 export default function MissionPage() {
   const { preferences, setPreferences } = useMissionPreferences();
+  const { brief } = useActiveMissionBrief();
   const {
     mission,
     error,
@@ -65,7 +67,8 @@ export default function MissionPage() {
     setFocusMode,
     setSettingsOpen,
     setShowCompletionToast,
-  } = useMissionExecution(preferences);
+    activityMessages,
+  } = useMissionExecution(preferences, brief);
 
   return (
     <div className="space-y-6 pb-12">
@@ -94,7 +97,8 @@ export default function MissionPage() {
         <div className="relative p-5 sm:p-7 lg:p-8">
           <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
             <div className="max-w-3xl">
-              <Badge className="border-white/10 bg-white/10 text-white hover:bg-white/10">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge className="border-white/10 bg-white/10 text-white hover:bg-white/10">
                 {error ? (
                   <TriangleAlert className="mr-1.5 h-3.5 w-3.5 text-red-400" />
                 ) : isFinished ? (
@@ -103,14 +107,20 @@ export default function MissionPage() {
                   <CircleDot className="mr-1.5 h-3.5 w-3.5 animate-pulse text-emerald-400" />
                 )}
                 {error ? "Falha na missão" : isFinished ? "Missão concluída" : "Missão em execução"}
-              </Badge>
+                </Badge>
+                {mission ? (
+                  <Badge className={mission.dataSource === "google_places" ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-200 hover:bg-emerald-400/10" : "border-amber-400/20 bg-amber-400/10 text-amber-200 hover:bg-amber-400/10"}>
+                    {mission.dataSource === "google_places" ? "Dados reais · Google Places" : "Modo demonstração"}
+                  </Badge>
+                ) : null}
+              </div>
 
               <div className="mt-5 flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
                 <span>LeadFlow AI · Missão #{String(runId).padStart(3, "0")}</span>
                 <span className="text-zinc-700">•</span>
-                <span>São Carlos</span>
+                <span>{mission?.city ?? "Preparando região"}</span>
                 <span className="text-zinc-700">•</span>
-                <span>Odontologia</span>
+                <span>{mission?.niche ?? brief.segment}</span>
               </div>
               <h1 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl lg:text-4xl">
                 {mission?.prompt ?? "Preparando inteligência comercial..."}
@@ -132,7 +142,7 @@ export default function MissionPage() {
                 className="col-span-2 border-white/10 bg-white/5 text-white hover:bg-white/10 hover:text-white sm:col-span-3"
               >
                 <Sparkles className="mr-2 h-4 w-4" />
-                Executar nova missão
+                Executar novamente
               </Button>
               <Button
                 type="button"
@@ -146,7 +156,13 @@ export default function MissionPage() {
             </div>
           </div>
 
-          <div className="mt-7 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+          {mission ? (
+            <div className={`mt-7 rounded-2xl border px-4 py-3 text-sm ${mission.dataSource === "google_places" ? "border-emerald-400/15 bg-emerald-400/[0.06] text-emerald-100" : "border-amber-400/15 bg-amber-400/[0.06] text-amber-100"}`}>
+              <strong>{mission.dataSource === "google_places" ? "Fonte ativa:" : "Ambiente de preparação:"}</strong> {mission.dataNotice}
+            </div>
+          ) : null}
+
+          <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
             <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
               <div className="flex items-center gap-2 text-zinc-300">
                 {isFinished ? (
@@ -270,7 +286,7 @@ export default function MissionPage() {
               </div>
             </Card>
 
-            <section className="space-y-4">
+            <section id="opportunities" className="scroll-mt-28 space-y-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
@@ -346,14 +362,14 @@ export default function MissionPage() {
               </div>
             </Card>
 
-            <Card className="rounded-[26px] p-5 shadow-sm">
+            <Card id="mission-summary" className="scroll-mt-28 rounded-[26px] p-5 shadow-sm">
               <div className="flex items-center gap-2">
                 <Target className="h-5 w-5 text-violet-500" />
                 <h3 className="font-semibold">Resumo da missão</h3>
               </div>
               <div className="mt-5 space-y-3">
-                <SummaryRow label="Cidade" value={mission?.city ?? "São Carlos"} />
-                <SummaryRow label="Segmento" value={mission?.niche ?? "Odontologia"} />
+                <SummaryRow label="Região" value={mission?.city ?? "Preparando região"} />
+                <SummaryRow label="Segmento" value={mission?.niche ?? brief.segment} />
                 <SummaryRow label="Analisadas" value={String(stats.analyzed)} />
                 <SummaryRow label="Qualificadas" value={String(stats.qualified)} accent />
                 <SummaryRow label="Descartadas" value={String(stats.discarded)} />

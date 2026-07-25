@@ -32,27 +32,17 @@ function formatCompactNumber(value: number) {
 }
 
 function translateActivity(activity: string) {
-  if (activity === "active") {
-    return "Ativa";
-  }
-
-  if (activity === "moderate") {
-    return "Moderada";
-  }
-
-  return "Inativa";
+  if (activity === "active") return "Ativa";
+  if (activity === "irregular") return "Irregular";
+  if (activity === "inactive") return "Inativa";
+  return "Não verificada";
 }
 
 function translateEngagement(engagement: string) {
-  if (engagement === "high") {
-    return "Alto";
-  }
-
-  if (engagement === "medium") {
-    return "Médio";
-  }
-
-  return "Baixo";
+  if (engagement === "high") return "Alto";
+  if (engagement === "medium") return "Médio";
+  if (engagement === "low") return "Baixo";
+  return "Não verificado";
 }
 
 function InstagramMetric({
@@ -82,12 +72,14 @@ function ProfileSignal({
   available,
   positiveLabel,
   negativeLabel,
+  verified = true,
 }: {
   icon: typeof Link2;
   label: string;
   available: boolean;
   positiveLabel: string;
   negativeLabel: string;
+  verified?: boolean;
 }) {
   return (
     <div className="rounded-2xl border bg-card p-4">
@@ -98,10 +90,10 @@ function ProfileSignal({
 
       <p
         className={`mt-2 text-sm font-semibold ${
-          available ? "text-emerald-600" : "text-red-500"
+          !verified ? "text-muted-foreground" : available ? "text-emerald-600" : "text-red-500"
         }`}
       >
-        {available ? positiveLabel : negativeLabel}
+        {!verified ? "Não verificado" : available ? positiveLabel : negativeLabel}
       </p>
     </div>
   );
@@ -164,13 +156,13 @@ export function InstagramSection({
             <InstagramMetric
               icon={Users}
               label="Seguidores"
-              value={formatCompactNumber(instagram.followers)}
+              value={instagram.metricsVerified ? formatCompactNumber(instagram.followers) : "Não verificado"}
             />
 
             <InstagramMetric
               icon={FileText}
               label="Publicações"
-              value={String(instagram.posts)}
+              value={instagram.metricsVerified ? String(instagram.posts) : "Não verificado"}
             />
 
             <InstagramMetric
@@ -193,6 +185,7 @@ export function InstagramSection({
               available={instagram.hasBioLink}
               positiveLabel="Configurado"
               negativeLabel="Não configurado"
+              verified={instagram.signalsVerified}
             />
 
             <ProfileSignal
@@ -201,6 +194,7 @@ export function InstagramSection({
               available={instagram.hasWhatsapp}
               positiveLabel="Encontrado"
               negativeLabel="Não encontrado"
+              verified={instagram.signalsVerified}
             />
 
             <ProfileSignal
@@ -209,6 +203,7 @@ export function InstagramSection({
               available={instagram.hasProfessionalBio}
               positiveLabel="Otimizada"
               negativeLabel="Precisa melhorar"
+              verified={instagram.signalsVerified}
             />
 
             <ProfileSignal
@@ -217,6 +212,7 @@ export function InstagramSection({
               available={instagram.hasHighlights}
               positiveLabel="Organizados"
               negativeLabel="Não encontrados"
+              verified={instagram.signalsVerified}
             />
           </div>
 
@@ -261,7 +257,9 @@ export function InstagramSection({
               </div>
 
               <p className="mt-4 text-xs text-muted-foreground">
-                Última publicação há {instagram.daysSinceLastPost} dias.
+                {instagram.metricsVerified && instagram.daysSinceLastPost >= 0
+                  ? `Última publicação há ${instagram.daysSinceLastPost} dias.`
+                  : "Data da última publicação não verificada."}
               </p>
             </div>
           </div>
@@ -279,10 +277,7 @@ export function InstagramSection({
               </p>
 
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                A ausência de um perfil identificável reduz autoridade,
-                descoberta local e possibilidades de relacionamento com novos
-                clientes. Isso representa uma oportunidade clara de implantação
-                e estruturação do canal.
+                Nenhum link verificável foi localizado nas fontes atuais. Isso não confirma ausência do perfil; indica apenas que o canal ainda precisa de validação manual antes da abordagem.
               </p>
             </div>
           </div>

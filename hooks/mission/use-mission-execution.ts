@@ -3,13 +3,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Mission } from "@/lib/engines/mission-engine";
 import { missionService } from "@/lib/services/mission.service";
-import { activityMessages, missionPrompt, stageDefinitions } from "@/lib/mission/config";
+import { getActivityMessages, stageDefinitions } from "@/lib/mission/config";
+import type { MissionBrief } from "@/lib/mission/brief";
 import type { MissionPreferences, MissionStats } from "@/lib/mission/types";
 import { normalizeExternalUrl, playCompletionSound } from "@/lib/mission/utils";
 
 const speedMultiplier = { slow: 1.45, normal: 1, fast: 0.55 } as const;
 
-export function useMissionExecution(preferences: MissionPreferences) {
+export function useMissionExecution(preferences: MissionPreferences, brief: MissionBrief) {
   const [mission, setMission] = useState<Mission | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState(2);
@@ -19,9 +20,10 @@ export function useMissionExecution(preferences: MissionPreferences) {
   const [isFinished, setIsFinished] = useState(false);
   const [runId, setRunId] = useState(24);
   const [justUnlocked, setJustUnlocked] = useState<string | null>(null);
-  const [focusMode, setFocusMode] = useState(true);
+  const [focusMode, setFocusMode] = useState(preferences.focusModeEnabled);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [showCompletionToast, setShowCompletionToast] = useState(false);
+  const activityMessages = useMemo(() => getActivityMessages(brief), [brief]);
   const completionSoundPlayed = useRef(false);
   const leadToastTimerRef = useRef<number | null>(null);
   const previousVisibleCompaniesRef = useRef(0);
@@ -29,9 +31,11 @@ export function useMissionExecution(preferences: MissionPreferences) {
   useEffect(() => {
     let mounted = true;
     void missionService
-      .createMission(missionPrompt)
+      .createMission(brief)
       .then((result) => {
-        if (mounted) setMission(result);
+        if (!mounted) return;
+        setMission(result);
+        window.localStorage.setItem("leadflow-last-mission", JSON.stringify(result));
       })
       .catch((missionError: unknown) => {
         if (!mounted) return;
@@ -41,7 +45,7 @@ export function useMissionExecution(preferences: MissionPreferences) {
     return () => {
       mounted = false;
     };
-  }, [runId]);
+  }, [runId, brief]);
 
   useEffect(() => {
     if (error || isFinished) return;
@@ -50,12 +54,22 @@ export function useMissionExecution(preferences: MissionPreferences) {
   }, [error, isFinished]);
 
   useEffect(() => {
+    if (mission || error || isFinished) return;
+
+    const preparationTimer = window.setInterval(() => {
+      setProgress((current) => Math.min(32, current + (current < 16 ? 2 : 1)));
+    }, 650);
+
+    return () => window.clearInterval(preparationTimer);
+  }, [mission, error, isFinished]);
+
+  useEffect(() => {
     if (!mission || error || isFinished) return;
     const multiplier = speedMultiplier[preferences.simulationSpeed];
 
     const progressTimer = window.setInterval(() => {
       setProgress((current) => {
-        const increment = current < 28 ? 3 : current < 72 ? 2 : 1;
+        const increment = current < 28 ? 5 : current < 72 ? 3 : 2;
         const next = Math.min(100, current + increment);
         if (next >= 100) {
           setIsFinished(true);
@@ -63,7 +77,7 @@ export function useMissionExecution(preferences: MissionPreferences) {
         }
         return next;
       });
-    }, Math.round(460 * multiplier));
+    }, Math.round(800 * multiplier));
 
     const stageTimer = window.setInterval(() => {
       setActiveStage((current) => Math.min(stageDefinitions.length - 1, current + 1));
@@ -78,7 +92,7 @@ export function useMissionExecution(preferences: MissionPreferences) {
       window.clearInterval(stageTimer);
       window.clearInterval(activityTimer);
     };
-  }, [mission, error, isFinished, preferences.simulationSpeed]);
+  }, [mission, error, isFinished, preferences.simulationSpeed, activityMessages.length]);
 
   const companies = useMemo(() => mission?.companies ?? [], [mission]);
 
@@ -169,6 +183,11 @@ export function useMissionExecution(preferences: MissionPreferences) {
   }
 
   function openMaps(company: Mission["companies"][number]) {
+    if (company.mapsUrl) {
+      window.open(company.mapsUrl, "_blank", "noopener,noreferrer");
+      return;
+    }
+
     const query = encodeURIComponent(`${company.name}, ${company.address}, ${company.city}`);
     window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, "_blank", "noopener,noreferrer");
   }
@@ -198,5 +217,6 @@ export function useMissionExecution(preferences: MissionPreferences) {
     justUnlocked, focusMode, settingsOpen, showCompletionToast, companies, visibleCompanies,
     shownCompanies, currentActivity, stats, restartMission, openWebsite, openInstagram, openMaps,
     generateOutreach, setJustUnlocked, setFocusMode, setSettingsOpen, setShowCompletionToast,
+    activityMessages,
   };
 }

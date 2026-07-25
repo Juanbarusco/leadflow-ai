@@ -1,57 +1,12 @@
-export interface GoogleBusiness {
-  id: string
+import type { MissionBrief } from "@/lib/mission/brief"
+import { getPlacesProvider } from "@/lib/places/provider"
+import type { PlaceBusiness, PlacesSearchResult } from "@/lib/places/types"
 
-  name: string
-
-  city: string
-
-  address: string
-
-  phone?: string
-
-  website?: string
-
-  rating: number
-
-  reviews: number
-}
+export type GoogleBusiness = PlaceBusiness
 
 export class GoogleAgent {
-  async search(query: string): Promise<GoogleBusiness[]> {
-    console.log(`🔎 Google Agent pesquisando: ${query}`)
-
-    return [
-      {
-        id: crypto.randomUUID(),
-
-        name: "Clínica Sorriso Prime",
-
-        city: "São Carlos",
-
-        address: "Av. São Carlos, 1520",
-
-        phone: "(16) 99999-9999",
-
-        website: "https://sorrisoprime.com.br",
-
-        rating: 4.9,
-
-        reviews: 327,
-      },
-      {
-        id: crypto.randomUUID(),
-
-        name: "Odonto Life",
-
-        city: "São Carlos",
-
-        address: "Rua Episcopal, 550",
-
-        rating: 4.8,
-
-        reviews: 201,
-      },
-    ]
+  async search(brief: MissionBrief): Promise<PlacesSearchResult> {
+    return getPlacesProvider().search(brief)
   }
 }
 

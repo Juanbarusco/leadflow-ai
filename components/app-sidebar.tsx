@@ -1,21 +1,19 @@
 "use client"
 
+import Link from "next/link"
+import { usePathname } from "next/navigation"
 import {
-  BarChart3,
   Bot,
   Building2,
   ChevronRight,
-  CircleDollarSign,
+  CircleHelp,
   Command,
   CreditCard,
   LayoutDashboard,
-  Megaphone,
   Search,
   Settings2,
   Sparkles,
   Target,
-  Users,
-  Workflow,
 } from "lucide-react"
 
 import {
@@ -31,118 +29,70 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar"
+import type { CurrentAccount } from "@/lib/auth/session"
 
 const mainItems = [
-  {
-    title: "Central",
-    icon: LayoutDashboard,
-    active: true,
-  },
-  {
-    title: "Radar",
-    icon: Target,
-  },
-  {
-    title: "Empresas",
-    icon: Building2,
-  },
-  {
-    title: "Prospecções",
-    icon: Search,
-  },
-  {
-    title: "Agentes IA",
-    icon: Bot,
-    badge: "6",
-  },
+  { title: "Hoje", href: "/dashboard", icon: LayoutDashboard },
+  { title: "Nova prospecção", href: "/prospecting", icon: Sparkles, emphasized: true },
+  { title: "Missão atual", href: "/mission", icon: Target, status: true },
+  { title: "Empresas", href: "/companies", icon: Building2 },
+  { title: "CRM com IA", href: "/crm", icon: Bot },
 ]
 
-const workspaceItems = [
-  {
-    title: "Pipeline",
-    icon: Workflow,
-  },
-  {
-    title: "Campanhas",
-    icon: Megaphone,
-  },
-  {
-    title: "Insights",
-    icon: BarChart3,
-  },
-  {
-    title: "Financeiro",
-    icon: CircleDollarSign,
-  },
-  {
-    title: "Equipe",
-    icon: Users,
-  },
-]
+function isItemActive(pathname: string, href: string) {
+  if (href === "/dashboard") return pathname === "/dashboard"
+  if (href === "/companies") return pathname.startsWith("/companies") || pathname.startsWith("/company/")
+  return pathname.startsWith(href)
+}
 
-export function AppSidebar() {
+export function AppSidebar({ account }: { account: CurrentAccount }) {
+  const pathname = usePathname()
+
   return (
-    <Sidebar
-      collapsible="icon"
-      className="border-r border-zinc-200/80 bg-white"
-    >
+    <Sidebar collapsible="icon" className="border-r border-zinc-200/80 bg-white">
       <SidebarHeader className="border-b border-zinc-200/80 px-3 py-4">
-        <div className="flex items-center gap-3 px-1">
+        <Link href="/dashboard" className="flex items-center gap-3 px-1">
           <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-zinc-950 text-white shadow-lg shadow-zinc-950/15">
             <Command className="h-5 w-5" />
-
             <span className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-white bg-emerald-400" />
           </div>
-
           <div className="min-w-0 group-data-[collapsible=icon]:hidden">
             <div className="flex items-center gap-2">
-              <p className="truncate text-sm font-semibold tracking-tight">
-                LeadFlow AI
-              </p>
-
-              <span className="rounded-full bg-indigo-50 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-indigo-600">
-                Beta
-              </span>
+              <p className="truncate text-sm font-semibold tracking-tight text-zinc-950">LeadFlow AI</p>
+              <span className="rounded-full bg-violet-50 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-violet-600">Beta</span>
             </div>
-
-            <p className="mt-0.5 truncate text-xs text-muted-foreground">
-              Commercial Intelligence OS
-            </p>
+            <p className="mt-0.5 truncate text-xs text-zinc-400">{account.workspace.name}</p>
           </div>
-        </div>
+        </Link>
       </SidebarHeader>
 
-      <SidebarContent className="px-2 py-3">
+      <SidebarContent className="px-2 py-4">
         <SidebarGroup>
-          <SidebarGroupLabel className="px-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-400">
-            Operação
-          </SidebarGroupLabel>
-
+          <SidebarGroupLabel className="px-2 text-[10px] font-semibold uppercase tracking-[0.17em] text-zinc-400">Operação</SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu className="gap-1">
+            <SidebarMenu className="gap-1.5">
               {mainItems.map((item) => {
                 const Icon = item.icon
-
+                const active = isItemActive(pathname, item.href)
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton
-                      isActive={item.active}
+                      render={<Link href={item.href} />}
+                      isActive={active}
                       tooltip={item.title}
-                      className="h-10 rounded-xl px-3 text-zinc-600 transition-all hover:bg-zinc-100 hover:text-zinc-950 data-[active=true]:bg-zinc-950 data-[active=true]:text-white data-[active=true]:shadow-md"
+                      className={item.emphasized && !active
+                        ? "h-11 rounded-xl bg-violet-50 px-3 text-violet-700 hover:bg-violet-100 hover:text-violet-800"
+                        : "h-11 rounded-xl px-3 text-zinc-600 transition-all hover:bg-zinc-100 hover:text-zinc-950 data-active:bg-zinc-950 data-active:text-white data-active:shadow-md"}
                     >
                       <Icon className="h-4 w-4" />
-
                       <span className="font-medium">{item.title}</span>
-
-                      {item.badge && (
-                        <span className="ml-auto rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-semibold text-indigo-600 group-data-[collapsible=icon]:hidden">
-                          {item.badge}
+                      {item.status && active ? (
+                        <span className="ml-auto flex items-center gap-1.5 text-[10px] font-semibold text-emerald-300 group-data-[collapsible=icon]:hidden">
+                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" /> Ao vivo
                         </span>
-                      )}
-
-                      {!item.badge && item.active && (
+                      ) : active ? (
                         <ChevronRight className="ml-auto h-3.5 w-3.5 opacity-60 group-data-[collapsible=icon]:hidden" />
-                      )}
+                      ) : null}
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 )
@@ -151,79 +101,41 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarGroup className="mt-2">
-          <SidebarGroupLabel className="px-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-400">
-            Workspace
-          </SidebarGroupLabel>
-
-          <SidebarGroupContent>
-            <SidebarMenu className="gap-1">
-              {workspaceItems.map((item) => {
-                const Icon = item.icon
-
-                return (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton
-                      tooltip={item.title}
-                      className="h-10 rounded-xl px-3 text-zinc-600 transition-all hover:bg-zinc-100 hover:text-zinc-950"
-                    >
-                      <Icon className="h-4 w-4" />
-                      <span className="font-medium">{item.title}</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
       </SidebarContent>
 
       <SidebarFooter className="border-t border-zinc-200/80 p-3">
-        <div className="mb-2 rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-white p-3 group-data-[collapsible=icon]:hidden">
-          <div className="flex items-center justify-between">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-600 text-white">
-              <Sparkles className="h-4 w-4" />
+        <Link href="/billing" className="mb-3 block rounded-2xl border border-zinc-200 bg-zinc-50 p-3 transition hover:border-zinc-300 hover:bg-white group-data-[collapsible=icon]:hidden">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-white text-violet-600 shadow-sm"><Search className="h-4 w-4" /></span>
+              <div>
+                <p className="text-xs font-semibold text-zinc-950">1.240 créditos {account.isDemo ? "demo" : ""}</p>
+                <p className="text-[10px] text-zinc-400">Ver uso e regras</p>
+              </div>
             </div>
-
-            <span className="rounded-full bg-white px-2 py-1 text-[9px] font-semibold uppercase tracking-wide text-indigo-600 shadow-sm">
-              Founder
-            </span>
+            <ChevronRight className="h-3.5 w-3.5 text-zinc-400" />
           </div>
-
-          <p className="mt-3 text-sm font-semibold">1.240 créditos de IA</p>
-
-          <p className="mt-1 text-xs text-muted-foreground">
-            72% disponíveis neste ciclo
-          </p>
-
-          <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-indigo-100">
-            <div className="h-full w-[72%] rounded-full bg-indigo-600" />
-          </div>
-        </div>
+          <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-zinc-200"><div className="h-full w-[72%] rounded-full bg-zinc-950" /></div>
+        </Link>
 
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton
-              tooltip="Configurações"
-              className="h-10 rounded-xl px-3 text-zinc-600 hover:bg-zinc-100 hover:text-zinc-950"
-            >
-              <Settings2 className="h-4 w-4" />
-              <span className="font-medium">Configurações</span>
+            <SidebarMenuButton render={<Link href="/settings" />} isActive={pathname.startsWith("/settings")} tooltip="Configurações" className="h-10 rounded-xl px-3 text-zinc-500 data-active:bg-zinc-950 data-active:text-white">
+              <Settings2 className="h-4 w-4" /><span className="font-medium">Configurações</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
-
           <SidebarMenuItem>
-            <SidebarMenuButton
-              tooltip="Plano e cobrança"
-              className="h-10 rounded-xl px-3 text-zinc-600 hover:bg-zinc-100 hover:text-zinc-950"
-            >
-              <CreditCard className="h-4 w-4" />
-              <span className="font-medium">Plano e cobrança</span>
+            <SidebarMenuButton render={<Link href="/billing" />} isActive={pathname.startsWith("/billing")} tooltip="Plano e cobrança" className="h-10 rounded-xl px-3 text-zinc-500 data-active:bg-zinc-950 data-active:text-white">
+              <CreditCard className="h-4 w-4" /><span className="font-medium">Plano e cobrança</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton render={<Link href="/help" />} isActive={pathname.startsWith("/help")} tooltip="Central de ajuda" className="h-10 rounded-xl px-3 text-zinc-500 data-active:bg-zinc-950 data-active:text-white">
+              <CircleHelp className="h-4 w-4" /><span className="font-medium">Ajuda</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
-
       <SidebarRail />
     </Sidebar>
   )

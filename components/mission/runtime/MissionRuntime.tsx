@@ -64,7 +64,7 @@ export function MissionFocusOverlay({
   const StageIcon = stage.icon;
 
   return (
-    <div className="fixed inset-0 z-[100] overflow-y-auto bg-zinc-950/95 px-4 py-5 text-white backdrop-blur-xl sm:px-6 sm:py-8">
+    <div className="fixed inset-0 z-[100] overflow-y-auto bg-zinc-950 px-4 py-5 text-white sm:px-6 sm:py-8">
       <div className="mx-auto max-w-7xl">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -75,7 +75,7 @@ export function MissionFocusOverlay({
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">
                 LeadFlow AI · Missão #{String(runId).padStart(3, "0")}
               </p>
-              <p className="mt-1 text-sm text-zinc-300">São Carlos · Clínicas odontológicas</p>
+              <p className="mt-1 text-sm text-zinc-300">{mission?.city ?? "Preparando região"} · {mission?.niche ?? "Segmento selecionado"}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -209,7 +209,7 @@ export function MissionFocusOverlay({
               <div className="relative flex items-center justify-between">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">Radar comercial</p>
-                  <h2 className="mt-1 text-lg font-medium">São Carlos</h2>
+                  <h2 className="mt-1 text-lg font-medium">{mission?.city ?? "Brasil"}</h2>
                 </div>
                 <Badge className="border-emerald-400/20 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/10">
                   <ActivityPulse />
@@ -226,17 +226,19 @@ export function MissionFocusOverlay({
                 <div className="absolute inset-[46%] z-20 flex items-center justify-center rounded-full bg-violet-500 shadow-[0_0_35px_rgba(139,92,246,.55)]">
                   <MapPin className="h-4 w-4" />
                 </div>
-                {!isFinished && preferences.animationsEnabled ? <div className="absolute inset-0 animate-ping rounded-full border border-violet-400/20 [animation-duration:2.8s]" /> : null}
+                {!isFinished && preferences.animationsEnabled ? (
+                  <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-full">
+                    <div className="leadflow-radar-sweep absolute left-1/2 top-1/2 h-1/2 w-1/2 origin-bottom-left bg-gradient-to-r from-transparent via-violet-400/10 to-violet-300/35" />
+                  </div>
+                ) : null}
                 {radarPoints.map((point, index) => (
                   <span
                     key={`${point.left}-${point.top}`}
-                    className={`absolute z-10 h-2.5 w-2.5 rounded-full transition-all duration-700 ${
+                    className={`absolute z-10 h-2.5 w-2.5 rounded-full shadow-[0_0_12px_rgba(52,211,153,.65)] transition-[opacity,transform] duration-500 ${
                       progress > 12 + index * 11 ? "scale-100 bg-emerald-400 opacity-100" : "scale-0 opacity-0"
                     }`}
                     style={{ left: point.left, top: point.top, transitionDelay: point.delay }}
-                  >
-                    {preferences.animationsEnabled ? <span className="absolute inset-0 animate-ping rounded-full bg-emerald-400 opacity-40" /> : null}
-                  </span>
+                  />
                 ))}
               </div>
             </div>
